@@ -57,4 +57,5 @@ def respond_to_mention(event, say):
             say("保存に失敗しました")
 
 
+
 SocketModeHandler(app, SLACK_APP_TOKEN).start()
