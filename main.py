@@ -10,6 +10,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 
+# requests
+import openai
+
+
 load_dotenv(verbose=True)
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -33,6 +37,7 @@ Base.metadata.create_all(bind=engine)
 
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
+openai.api_key = os.environ.get("CHATGPT_API_KEY")
 
 
 app = App(token=SLACK_BOT_TOKEN)
@@ -56,6 +61,27 @@ def respond_to_mention(event, say):
             session.close()
             say("保存に失敗しました")
 
+
+# chatgpt
+# gptが含まれている場合のみ、chatgptを呼び出す
+@app.message("gpt")
+def message_hello(message, say):
+    message = message['text'].split(' ')[1]
+    res = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "system",
+                "content": "日本語で返答してください。"
+            },
+            {
+                "role": "user",
+                "content": message
+            },
+        ],
+    )
+    print(res)
+    say(res["choices"][0]["message"]["content"])
 
 
 SocketModeHandler(app, SLACK_APP_TOKEN).start()
