@@ -9,9 +9,11 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-
-# requests
+# openai
 import openai
+
+# APScheduler
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 
 load_dotenv(verbose=True)
@@ -33,6 +35,7 @@ class Message(Base):
     text = Column(String)
 
 
+# テーブル作成
 Base.metadata.create_all(bind=engine)
 
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
@@ -84,4 +87,19 @@ def message_hello(message, say):
     say(res["choices"][0]["message"]["content"])
 
 
-SocketModeHandler(app, SLACK_APP_TOKEN).start()
+# APScheduler
+# 1分ごとに現在時刻を投稿する
+scheduler = BlockingScheduler()
+
+
+@scheduler.scheduled_job('interval', minutes=1)
+def timed_job():
+    response = app.client.chat_postMessage(
+        channel="aaa", text="Hello, world!")
+
+
+if __name__ == "__main__":
+    # Socket Modeで起動
+    print("start")
+    SocketModeHandler(app, SLACK_APP_TOKEN).start()
+    scheduler.start()
